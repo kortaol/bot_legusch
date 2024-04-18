@@ -1,0 +1,8 @@
+token
+channels
+
+bin/*
+include/*
+lib/*
+pyvenv.cfg
+lib64

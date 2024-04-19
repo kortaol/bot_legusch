@@ -19,7 +19,6 @@ channels_file.close()
 async def on_ready():
     print("Connected!")
     scheduler = AsyncIOScheduler()
-    ch = bot.get_channel(1086755221755138141)
     scheduler.add_job(rofl, trigger=CronTrigger(hour="2,12,22", minute=28))
     scheduler.start()
 
@@ -30,19 +29,31 @@ async def rofl():
 
 @bot.slash_command(name = "addch", description = "Добавить кАНАЛ, в который будет говориться рофл")
 @has_permissions(administrator=True)
-async def add_channel(ctx, channel:discord.TextChannel ):
+async def add_channel( ctx, channel:discord.TextChannel ):
+    if channel.id in channels:
+        await ctx.respond("Ошибка: канал уже добавлен!", ephemeral = True)
+        return
     async with aiofiles.open('channels', 'a') as channels_file:
         await channels_file.write( str(channel.id) + '\n' )
         await channels_file.close()
     channels.append( channel.id )
-    await ctx.respond("Канал {} успешно добавлен.".format(channel.name), ephemeral = True)
+    await ctx.respond("Канал <#{}> успешно добавлен.".format(channel.id), ephemeral = True)
 
-@bot.slash_command(name = "clch", description = "Очистить список кАНАЛОВ полностью")
+@bot.slash_command(name = "rmch", description = "Удалить кАНАЛ из списка")
 @has_permissions(administrator=True)
-async def clear_channels( ctx ):
-    async with aiofiles.open('channels', 'w') as channels_file:
-        await channels_file.close()
-    channels = []
-    await ctx.respond("Список каналов полностью очищен.", ephemeral = True)
+async def remove_channel( ctx, channel:discord.TextChannel ):
+    if channel.id not in channels:
+        await ctx.respond("Ошибка: канал не был добавлен!", ephemeral = True)
+        return
+    async with aiofiles.open("channels", "r") as f:
+        lines = await f.readlines()
+    async with aiofiles.open("channels", "w") as f:
+        for line in lines:
+            if line.strip("\n") != str( channel.id ):
+                await f.write(line)
+
+
+    channels.remove( channel.id )
+    await ctx.respond("Канал <#{}> успешно удалён.".format(channel.id), ephemeral = True)
 
 bot.run( token )
